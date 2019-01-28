@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>HS-UI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
+    <!--script src="http://ajax.aspnetcdn.com/ajax/jquery/jquery-1.9.0.js"></script-->
+    <script src="lib/jquery/jquery.min.js"></script>
+    <script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/js/bootstrap.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/knockout/knockout-2.2.1.js"></script>
+  </head>
+  <body>
+    <div class="navbar">
+        <div class="navbar-inner">
+            <a class="brand" href="#">Hiring Event</a>
+        </div>
+    </div>
+    <div id="main" class="container">
+        <table class="table table-striped">
+          <thead>
+              <tr>
+                  <th>Id</th>
+                  <th>Employee Name</th>
+                  <th>Employee Address</th>
+                  <th>Employee Phone Number</th>
+              </tr>
+          </thead>
+          <tbody data-bind="foreach: hiringdata">
+              <tr>
+                  <td data-bind="text: hiringId"></td>
+                  <td data-bind="text: hiringName"></td>
+                  <td data-bind="text: hiringAddress"></td>
+                  <td data-bind="text: hiringPhone"></td>
+              </tr>
+          </tbody>
+      </table>
+
+      <button data-bind="click: beginAdd" class="btn">Add Data</button>
+    </div>
+
+    <div id="add" class="modal hide fade" tabindex="=1" role="dialog" aria-labelledby="addDialogLabel" aria-hidden="true">
+      <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+          <h3 id="addDialogLabel">Add</h3>
+      </div>
+      <div class="modal-body">
+            <form class="form-horizontal">
+                <div class="control-group">
+                    <label class="control-label" for="inputName">Employee Name</label>
+                    <div class="controls">
+                        <input data-bind="value: hiringName" type="text" id="inputName" placeholder="Employee Name" style="width: 150px;">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="inputAddress">Address</label>
+                    <div class="controls">
+                        <input data-bind="value: hiringAddress" type="text" id="inputAddress" placeholder="Address" style="width: 150px;">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="inputPhone">Employee Contact Number</label>
+                    <div class="controls">
+                        <input data-bind="value: hiringPhone" type="text" id="inputPhone" placeholder="Contact Number" style="width: 150px;">
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button data-bind="click: addData" class="btn btn-primary">Add Data</button>
+            <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+       
+        function HiringViewModel() {
+            var self = this;
+            self.hiringURI = 'http://localhost:8086/hiringstack/hiringstack/';
+            self.hiringdata = ko.observableArray();
+
+            self.ajax = function(uri, method, data) {
+                var request = {
+                    url: uri,
+                    type: method,
+                    contentType: "application/json",
+                    cache: false,
+                    dataType: 'json',
+                    data: JSON.stringify(data),
+                    error: function(jqXHR) {
+                        console.log("ajax error " + jqXHR.status);
+                    }
+                };
+                return $.ajax(request);
+            }
+
+            self.beginAdd = function() {
+                $('#add').modal('show');
+            }
+
+
+
+            self.ajax(self.hiringURI, 'GET').done(function(data) {
+              for (var i = 0; i < data.length; i++) {
+                self.hiringdata.push({
+                    hiringId: ko.observable(data[i].hiringId),
+                    hiringName: ko.observable(data[i].hiringName),
+                    hiringAddress: ko.observable(data[i].hiringAddress),
+                    hiringPhone: ko.observable(data[i].hiringPhone)
+                });
+              }
+            });
+
+            self.add = function(hiringdata){
+              self.ajax(self.hiringURI, 'POST', hiringdata).done(function(data) {
+                self.hiringdata.push({
+                    hiringId: ko.observable(data.hiringId),
+                    hiringName: ko.observable(data.hiringName),
+                    hiringAddress: ko.observable(data.hiringAddress),
+                    hiringPhone: ko.observable(data.hiringPhone)
+                });
+              });
+
+
+            }
+          }
+
+          function AddHiringstackViewModel() {
+            var self = this;
+            self.hiringName = ko.observable();
+            self.hiringAddress = ko.observable();
+            self.hiringPhone = ko.observable();
+
+            self.addData = function() {
+                $('#add').modal('hide');
+                  hiringViewModel.add({
+                    hiringName: self.hiringName(),
+                    hiringAddress: self.hiringAddress(),
+                    hiringPhone: self.hiringPhone()
+                });
+                self.hiringName("");
+                self.hiringAddress("");
+                self.hiringPhone("");
+            }
+          }
+
+          var hiringViewModel = new HiringViewModel();
+          var addHiringstackViewModel = new AddHiringstackViewModel();
+          ko.applyBindings(hiringViewModel, $('#main')[0]);
+          ko.applyBindings(addHiringstackViewModel, $('#add')[0]);
+          
+    </script>
+</body>
+</html>
